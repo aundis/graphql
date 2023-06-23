@@ -7,8 +7,8 @@ import (
 
 	"reflect"
 
-	"github.com/graphql-go/graphql/language/ast"
-	"github.com/graphql-go/graphql/language/visitor"
+	"github.com/aundis/graphql/language/ast"
+	"github.com/aundis/graphql/language/visitor"
 )
 
 func getMapValue(m map[string]interface{}, key string) interface{} {
@@ -382,6 +382,15 @@ var printDocASTReducer = map[string]visitor.VisitFunc{
 	"BooleanValue": func(p visitor.VisitFuncParams) (string, interface{}) {
 		switch node := p.Node.(type) {
 		case *ast.BooleanValue:
+			return visitor.ActionUpdate, fmt.Sprintf("%v", node.Value)
+		case map[string]interface{}:
+			return visitor.ActionUpdate, getMapValueString(node, "Value")
+		}
+		return visitor.ActionNoChange, nil
+	},
+	"NullValue": func(p visitor.VisitFuncParams) (string, interface{}) {
+		switch node := p.Node.(type) {
+		case *ast.NullValue:
 			return visitor.ActionUpdate, fmt.Sprintf("%v", node.Value)
 		case map[string]interface{}:
 			return visitor.ActionUpdate, getMapValueString(node, "Value")

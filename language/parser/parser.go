@@ -3,10 +3,10 @@ package parser
 import (
 	"fmt"
 
-	"github.com/graphql-go/graphql/gqlerrors"
-	"github.com/graphql-go/graphql/language/ast"
-	"github.com/graphql-go/graphql/language/lexer"
-	"github.com/graphql-go/graphql/language/source"
+	"github.com/aundis/graphql/gqlerrors"
+	"github.com/aundis/graphql/language/ast"
+	"github.com/aundis/graphql/language/lexer"
+	"github.com/aundis/graphql/language/source"
 )
 
 type parseFn func(parser *Parser) (interface{}, error)
@@ -606,7 +606,15 @@ func parseValueLiteral(parser *Parser, isConst bool) (ast.Value, error) {
 				Value: value,
 				Loc:   loc(parser, token.Start),
 			}), nil
-		} else if token.Value != "null" {
+		} else if token.Value == "null" {
+			if err := advance(parser); err != nil {
+				return nil, err
+			}
+			return ast.NewNullValue(&ast.NullValue{
+				Value: nil,
+				Loc:   loc(parser, token.Start),
+			}), nil
+		} else {
 			if err := advance(parser); err != nil {
 				return nil, err
 			}

@@ -7,11 +7,11 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/graphql-go/graphql/gqlerrors"
-	"github.com/graphql-go/graphql/language/ast"
-	"github.com/graphql-go/graphql/language/kinds"
-	"github.com/graphql-go/graphql/language/printer"
-	"github.com/graphql-go/graphql/language/visitor"
+	"github.com/aundis/graphql/gqlerrors"
+	"github.com/aundis/graphql/language/ast"
+	"github.com/aundis/graphql/language/kinds"
+	"github.com/aundis/graphql/language/printer"
+	"github.com/aundis/graphql/language/visitor"
 )
 
 // SpecifiedRules set includes all validation rules defined by the GraphQL spec.
@@ -1727,6 +1727,12 @@ func VariablesInAllowedPositionRule(context *ValidationContext) *ValidationRuleI
 func isValidLiteralValue(ttype Input, valueAST ast.Value) (bool, []string) {
 	if _, ok := ttype.(*NonNull); !ok {
 		if valueAST == nil {
+			return true, nil
+		}
+
+		// This function only tests literals, and assumes variables will provide
+		// values of the correct type.
+		if valueAST.GetKind() == kinds.NullValue {
 			return true, nil
 		}
 

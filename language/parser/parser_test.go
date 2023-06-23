@@ -7,11 +7,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/graphql-go/graphql/gqlerrors"
-	"github.com/graphql-go/graphql/language/ast"
-	"github.com/graphql-go/graphql/language/location"
-	"github.com/graphql-go/graphql/language/printer"
-	"github.com/graphql-go/graphql/language/source"
+	"github.com/aundis/graphql/gqlerrors"
+	"github.com/aundis/graphql/language/ast"
+	"github.com/aundis/graphql/language/location"
+	"github.com/aundis/graphql/language/printer"
+	"github.com/aundis/graphql/language/source"
 )
 
 func TestBadToken(t *testing.T) {
@@ -178,15 +178,6 @@ func TestDoesNotAcceptFragmentsSpreadOfOn(t *testing.T) {
 	test := errorMessageTest{
 		`{ ...on }'`,
 		`Syntax Error GraphQL (1:9) Expected Name, found }`,
-		false,
-	}
-	testErrorMessage(t, test)
-}
-
-func TestDoesNotAllowNullAsValue(t *testing.T) {
-	test := errorMessageTest{
-		`{ fieldWithNullableStringInput(input: null) }'`,
-		`Syntax Error GraphQL (1:39) Unexpected Name "null"`,
 		false,
 	}
 	testErrorMessage(t, test)
@@ -367,6 +358,7 @@ func TestAllowsNonKeywordsAnywhereNameIsAllowed(t *testing.T) {
 		"subscription",
 		"true",
 		"false",
+		"null",
 	}
 	for _, keyword := range nonKeywords {
 		fragmentName := keyword

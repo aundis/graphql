@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"regexp"
 
-	"github.com/graphql-go/graphql/language/ast"
+	"github.com/aundis/graphql/language/ast"
 )
 
 // Type interface for all of the possible kinds of GraphQL types
@@ -157,6 +157,9 @@ func GetNullable(ttype Type) Nullable {
 	}
 	return ttype
 }
+
+// NullValue to be able to detect if a value is set to null or if it is omitted
+type NullValue struct{}
 
 // Named interface for types that do not include modifiers like List or NonNull.
 type Named interface {
