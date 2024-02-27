@@ -366,6 +366,11 @@ func valueFromAST(valueAST ast.Value, ttype Input, variables map[string]interfac
 	case *NonNull:
 		return valueFromAST(valueAST, ttype.OfType, variables)
 	case *List:
+		// null list
+		if _, ok := valueAST.(*ast.NullValue); ok {
+			// return NullValue{}
+			return NullValue{}
+		}
 		values := []interface{}{}
 		if valueAST, ok := valueAST.(*ast.ListValue); ok {
 			for _, itemAST := range valueAST.Values {
