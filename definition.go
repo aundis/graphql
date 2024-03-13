@@ -1135,9 +1135,11 @@ type InputObjectConfigFieldMap map[string]*InputObjectFieldConfig
 type InputObjectFieldMap map[string]*InputObjectField
 type InputObjectConfigFieldMapThunk func() InputObjectConfigFieldMap
 type InputObjectConfig struct {
-	Name        string      `json:"name"`
-	Fields      interface{} `json:"fields"`
-	Description string      `json:"description"`
+	Name         string      `json:"name"`
+	Fields       interface{} `json:"fields"`
+	Description  string      `json:"description"`
+	ValueType    Type        `json:"value"`
+	DefaultValue interface{} `json:"defaultValue"`
 }
 
 func NewInputObject(config InputObjectConfig) *InputObject {

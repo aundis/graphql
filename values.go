@@ -155,13 +155,25 @@ func coerceValue(ttype Input, value interface{}) interface{} {
 			valueMap = map[string]interface{}{}
 		}
 
-		for name, field := range ttype.Fields() {
-			fieldValue := coerceValue(field.Type, valueMap[name])
-			if isNullish(fieldValue) {
-				fieldValue = field.DefaultValue
+		if ttype.typeConfig.ValueType != nil {
+			for k, v := range valueMap {
+				fieldValue := coerceValue(ttype.typeConfig.ValueType, v)
+				if isNullish(fieldValue) {
+					fieldValue = ttype.typeConfig.DefaultValue
+				}
+				if !isNullish(fieldValue) {
+					obj[k] = fieldValue
+				}
 			}
-			if !isNullish(fieldValue) {
-				obj[name] = fieldValue
+		} else {
+			for name, field := range ttype.Fields() {
+				fieldValue := coerceValue(field.Type, valueMap[name])
+				if isNullish(fieldValue) {
+					fieldValue = field.DefaultValue
+				}
+				if !isNullish(fieldValue) {
+					obj[name] = fieldValue
+				}
 			}
 		}
 		return obj
@@ -249,38 +261,44 @@ func isValidInputValue(value interface{}, ttype Input) (bool, []string) {
 		if !ok {
 			return false, []string{fmt.Sprintf(`Expected "%v", found not an object.`, ttype.Name())}
 		}
-		fields := ttype.Fields()
 
-		// to ensure stable order of field evaluation
-		fieldNames := []string{}
-		valueMapFieldNames := []string{}
+		if ttype.typeConfig.ValueType == nil {
+			fields := ttype.Fields()
+			// to ensure stable order of field evaluation
+			fieldNames := []string{}
+			valueMapFieldNames := []string{}
 
-		for fieldName := range fields {
-			fieldNames = append(fieldNames, fieldName)
-		}
-		sort.Strings(fieldNames)
-
-		for fieldName := range valueMap {
-			valueMapFieldNames = append(valueMapFieldNames, fieldName)
-		}
-		sort.Strings(valueMapFieldNames)
-
-		// Ensure every provided field is defined.
-		for _, fieldName := range valueMapFieldNames {
-			if _, ok := fields[fieldName]; !ok {
-				messagesReduce = append(messagesReduce, fmt.Sprintf(`In field "%v": Unknown field.`, fieldName))
+			for fieldName := range fields {
+				fieldNames = append(fieldNames, fieldName)
 			}
-		}
+			sort.Strings(fieldNames)
 
-		// Ensure every defined field is valid.
-		for _, fieldName := range fieldNames {
-			_, messages := isValidInputValue(valueMap[fieldName], fields[fieldName].Type)
-			if messages != nil {
+			for fieldName := range valueMap {
+				valueMapFieldNames = append(valueMapFieldNames, fieldName)
+			}
+			sort.Strings(valueMapFieldNames)
+			// Ensure every provided field is defined.
+			for _, fieldName := range valueMapFieldNames {
+				if _, ok := fields[fieldName]; !ok {
+					messagesReduce = append(messagesReduce, fmt.Sprintf(`In field "%v": Unknown field.`, fieldName))
+				}
+			}
+			// Ensure every defined field is valid.
+			for _, fieldName := range fieldNames {
+				_, messages := isValidInputValue(valueMap[fieldName], fields[fieldName].Type)
+				for _, message := range messages {
+					messagesReduce = append(messagesReduce, fmt.Sprintf(`In field "%v": %v`, fieldName, message))
+				}
+			}
+		} else {
+			for fieldName, value := range valueMap {
+				_, messages := isValidInputValue(value, ttype.typeConfig.ValueType)
 				for _, message := range messages {
 					messagesReduce = append(messagesReduce, fmt.Sprintf(`In field "%v": %v`, fieldName, message))
 				}
 			}
 		}
+
 		return (len(messagesReduce) == 0), messagesReduce
 	case *Scalar:
 		if parsedVal := ttype.ParseValue(value); isNullish(parsedVal) {
@@ -396,15 +414,24 @@ func valueFromAST(valueAST ast.Value, ttype Input, variables map[string]interfac
 			fieldASTs[of.Name.Value] = of
 		}
 		obj := map[string]interface{}{}
-		for name, field := range ttype.Fields() {
-			var value interface{}
-			if of, ok = fieldASTs[name]; ok {
-				value = valueFromAST(of.Value, field.Type, variables)
-			} else {
-				value = field.DefaultValue
+		if ttype.typeConfig.ValueType == nil {
+			for name, field := range ttype.Fields() {
+				var value interface{}
+				if of, ok = fieldASTs[name]; ok {
+					value = valueFromAST(of.Value, field.Type, variables)
+				} else {
+					value = field.DefaultValue
+				}
+				if !isNullish(value) {
+					obj[name] = value
+				}
 			}
-			if !isNullish(value) {
-				obj[name] = value
+		} else {
+			for name, valueAst := range fieldASTs {
+				value := valueFromAST(valueAst.Value, ttype.typeConfig.ValueType, variables)
+				if !isNullish(value) {
+					obj[name] = value
+				}
 			}
 		}
 		return obj

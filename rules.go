@@ -1784,20 +1784,35 @@ func isValidLiteralValue(ttype Input, valueAST ast.Value) (bool, []string) {
 		fieldASTMap := map[string]*ast.ObjectField{}
 		for _, fieldAST := range fieldASTs {
 			fieldASTMap[fieldAST.Name.Value] = fieldAST
+			// 判断是否是MAP, 如果是MAP不需要做这个检查
+			if ttype.typeConfig.ValueType != nil {
+				continue
+			}
 			field, ok := fields[fieldAST.Name.Value]
 			if !ok || field == nil {
 				messagesReduce = append(messagesReduce, fmt.Sprintf(`In field "%v": Unknown field.`, fieldAST.Name.Value))
 			}
 		}
-		// Ensure every defined field is valid.
-		for fieldName, field := range fields {
-			var fieldASTValue ast.Value
-			if fieldAST := fieldASTMap[fieldName]; fieldAST != nil {
-				fieldASTValue = fieldAST.Value
+		if ttype.typeConfig.ValueType != nil {
+			// 检查Key和Value的类型
+			for name, ast := range fieldASTMap {
+				if isValid, messages := isValidLiteralValue(ttype.typeConfig.ValueType, ast.Value); !isValid {
+					for _, message := range messages {
+						messagesReduce = append(messagesReduce, fmt.Sprintf("In field \"%v\": %v", name, message))
+					}
+				}
 			}
-			if isValid, messages := isValidLiteralValue(field.Type, fieldASTValue); !isValid {
-				for _, message := range messages {
-					messagesReduce = append(messagesReduce, fmt.Sprintf("In field \"%v\": %v", fieldName, message))
+		} else {
+			// Ensure every defined field is valid.
+			for fieldName, field := range fields {
+				var fieldASTValue ast.Value
+				if fieldAST := fieldASTMap[fieldName]; fieldAST != nil {
+					fieldASTValue = fieldAST.Value
+				}
+				if isValid, messages := isValidLiteralValue(field.Type, fieldASTValue); !isValid {
+					for _, message := range messages {
+						messagesReduce = append(messagesReduce, fmt.Sprintf("In field \"%v\": %v", fieldName, message))
+					}
 				}
 			}
 		}
