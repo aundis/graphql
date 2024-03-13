@@ -1168,7 +1168,7 @@ func (gt *InputObject) defineFieldMap() InputObjectFieldMap {
 	resultFieldMap := InputObjectFieldMap{}
 
 	if gt.err = invariantf(
-		len(fieldMap) > 0,
+		len(fieldMap) > 0 || gt.typeConfig.ValueType != nil,
 		`%v fields must be an object with field names as keys or a function which return such an object.`, gt,
 	); gt.err != nil {
 		return resultFieldMap
